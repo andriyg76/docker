@@ -53,9 +53,10 @@ hg|mercurial)
 esac
 
 
+mysql_env=
 mysql_suffix=
 if [[ ! -z "${MYSQL_PASSWORD}" ]] ; then
-    mysql_suffix="${mysql_suffix} --password=${MYSQL_PASSWORD}"
+    mysql_env="${mysql_env} MYSQL_PWD=\"${MYSQL_PASSWORD}\""
 fi
 
 if [[ ! -z "${MYSQL_USER}" ]] ; then
@@ -73,9 +74,9 @@ fi
 mysql_split="${BASE_PATH}/mysqldump_splitsort.py"
 
 sql_dump_file="$( mktemp /tmp/dump.XXXX )"
-mysqldump ${mysql_suffix} --result-file="${sql_dump_file}" ${MYSQL_DATABASE} \
+eval ${mysql_env} mysqldump ${mysql_suffix} --result-file="${sql_dump_file}" ${MYSQL_DATABASE} \
     -c --skip-opt --skip-dump-date || \
-    panic "Error dumpring databse ${MYSQL_USER}@${MYSQL_HOST}/${MYSQL_DATABASE}"
+    panic "Error dumpring databse ${MYSQL_USER}@${MYSQL_HOST}:${MYSQL_PORT}/${MYSQL_DATABASE}"
 
 "${mysql_split}" "${sql_dump_file}" -d "${mysql_backup_dir}" -c || \
     panic "Error splitting databse dump "
