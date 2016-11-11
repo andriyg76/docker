@@ -1,12 +1,24 @@
 REPO=andriyg
-NAME=mysql_with_dump:latest
+FULL_NAME=$(NAME):latest
+NAME=mysql_with_dump
 
 build: 
-	docker build -t $(REPO)/$(NAME) \
+	docker build -t $(REPO)/$(FULL_NAME) \
 		--build-arg http_proxy=$(http_proxy) \
 		--build-arg https_proxy=$(http_proxy) \
 		--build-arg no_proxy=$(no_proxy) \
 		.
 
 push: build
-	docker push $(REPO)/$(NAME)
+	docker push $(REPO)/$(FULL_NAME)
+
+build5.5:
+	docker build -t $(REPO)/$(NAME):5.5 \
+		--build-arg http_proxy=$(http_proxy) \
+		--build-arg https_proxy=$(http_proxy) \
+		--build-arg no_proxy=$(no_proxy) \
+		--file mysql.5.5.docker \
+		.
+
+push: build5.5
+	docker push $(REPO)/$(NAME):5.5
