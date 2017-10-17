@@ -75,7 +75,7 @@ mysql_split="${BASE_PATH}/mysqldump_splitsort.py"
 
 sql_dump_file="$( mktemp /tmp/dump.XXXX )"
 eval ${mysql_env} mysqldump ${mysql_suffix} --result-file="${sql_dump_file}" ${MYSQL_DATABASE} \
-    -c --skip-opt --skip-dump-date || \
+    -c --skip-opt --skip-dump-date --create-options || \
     panic "Error dumpring databse ${MYSQL_USER}@${MYSQL_HOST}:${MYSQL_PORT}/${MYSQL_DATABASE}"
 
 "${mysql_split}" "${sql_dump_file}" -d "${mysql_backup_dir}" -c || \
