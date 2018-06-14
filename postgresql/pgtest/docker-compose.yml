@@ -1,0 +1,19 @@
+version: "2.0"
+
+services:
+
+  db:
+    build:
+      context: ..
+      args:
+        - http_proxy=${http_proxy}
+        - https_proxy=${http_proxy}
+        - no_proxy=${no_proxy}
+    environment:
+      POSTGRES_PASSWORD: ${PGSQL_PASSWORD}
+    command: ${PGSQL_DATABASE}
+
+  adminer:
+    image: adminer
+    ports:
+      - 8080:8080

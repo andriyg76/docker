@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -e
+
 SCRIPT_NAME="$( basename "$0" )"
 BASE_PATH="$( dirname $( readlink -e "$0" ) )"
 
@@ -14,9 +16,9 @@ function panic() {
 
 cd /tmp
 
-PSQL_DATABASE="${PSQL_DATABASE}"
-if [[ -z "${PSQL_DATABASE}" ]]; then
-    panic "MYSQL_DATABASE have to be defined"
+PGSQL_DATABASE="${PGSQL_DATABASE}"
+if [[ -z "${PGSQL_DATABASE}" ]]; then
+    panic "PGSQL_DATABASE have to be defined"
 fi
 PGSQL_HOST="${PGSQL_HOST}"
 PGSQL_USER="${PGSQL_USER}"
@@ -54,31 +56,31 @@ esac
 
 
 pgsql_env=
-pgsql_suffix=
+pgdump_suffix=
 if [[ ! -z "${PGSQL_PASSWORD}" ]] ; then
     pgsql_env="${pgsql_env} MYSQL_PWD=\"${PGSQL_PASSWORD}\""
 fi
 
 if [[ ! -z "${PGSQL_USER}" ]] ; then
-    pgsql_suffix="${pgsql_suffix} --user=${PGSQL_USER}"
+    pgdump_suffix="${pgdump_suffix} --user=${PGSQL_USER}"
 fi
 
 if [[ ! -z "${PGSQL_HOST}" ]] ; then
-    pgsql_suffix="${pgsql_suffix} --host=${PGSQL_HOST}"
+    pgdump_suffix="${pgdump_suffix} --host=${PGSQL_HOST}"
 fi
 
 if [[ ! -z "${PGSQL_PORT}" ]] ; then
-    pgsql_suffix="${pgsql_suffix} --port=${PGSQL_PORT}"
+    pgdump_suffix="${pgdump_suffix} --port=${PGSQL_PORT}"
 fi
 
-mysql_split="${BASE_PATH}/mysqldump_splitsort.py"
+pg_split="${BASE_PATH}/pgdump_splitsort.py"
 
 sql_dump_file="$( mktemp /tmp/dump.XXXX )"
-eval ${pgsql_env} mysqldump ${pgsql_suffix} --result-file="${sql_dump_file}" ${PSQL_DATABASE} \
-    -c --skip-opt --skip-dump-date --create-options || \
-    panic "Error dumpring databse ${PGSQL_USER}@${PGSQL_HOST}:${PGSQL_PORT}/${PSQL_DATABASE}"
+eval ${pgsql_env} pg_dump ${pgdump_suffix} ${PGSQL_DATABASE} \
+    -c --skip-opt --skip-dump-date --create-options  > "${sql_dump_file}" || \
+    panic "Error dumpring databse ${PGSQL_USER}@${PGSQL_HOST}:${PGSQL_PORT}/${PGSQL_DATABASE}"
 
-"${mysql_split}" "${sql_dump_file}" -d "${mysql_backup_dir}" -c || \
+"${pg_split}" "${sql_dump_file}" -d "${mysql_backup_dir}" -c || \
     panic "Error splitting databse dump "
 rm -f "${sql_dump_file}"
 
