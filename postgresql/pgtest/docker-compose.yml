@@ -11,7 +11,12 @@ services:
         - no_proxy=${no_proxy}
     environment:
       POSTGRES_PASSWORD: ${PGSQL_PASSWORD}
-    command: ${PGSQL_DATABASE}
+      POSTGRES_USER: ${PGSQL_USER}
+      POSTGRES_DB: ${PGSQL_DATABASE}
+      # next environments is requirements for database dump
+      BACKUP_TARGET: /tmp/backup
+    volumes:
+      - ./dump:/tmp/backup
 
   adminer:
     image: adminer

@@ -22,3 +22,9 @@ pull:
 	docker tag $(PULL_REPO)/$(BASE) $(BASE)
 	docker pull $(PULL_REPO)/adminer
 	docker tag $(PULL_REPO)/adminer adminer
+
+exec:
+	docker-compose exec db /bin/bash
+
+dumpdb:
+	docker-compose exec db /sqldump/dump_database.sh

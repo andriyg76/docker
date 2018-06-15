@@ -16,75 +16,72 @@ function panic() {
 
 cd /tmp
 
-PGSQL_DATABASE="${PGSQL_DATABASE}"
-if [[ -z "${PGSQL_DATABASE}" ]]; then
-    panic "PGSQL_DATABASE have to be defined"
-fi
-PGSQL_HOST="${PGSQL_HOST}"
-PGSQL_USER="${PGSQL_USER}"
-PGSQL_PORT="${PGSQL_PORT}"
-PGSQL_PASSWORD="${PGSQL_PASSWORD}"
+POSTGRES_DB="${POSTGRES_DB}"
+POSTGRES_USER="${POSTGRES_USER}"
+POSTGRES_PASSWORD="${POSTGRES_DB}"
+POSTGRES_HOST="${POSTGRES_HOST}"
+POSTGRES_PORT="${POSTGRES_PORT}"
 
-PGSQL_BACKUP_TYPE="${PGSQL_BACKUP_TYPE}"
-PGSQL_BACKUP_TARGET="${PGSQL_BACKUP_TARGET}"
-if [[ -z "${PGSQL_BACKUP_TARGET/}" ]]; then
-    panic "PGSQL_BACKUP_TARGET have to be defined"
+BACKUP_TYPE="${BACKUP_TYPE}"
+BACKUP_TARGET="${BACKUP_TARGET}"
+
+if [[ -z "${BACKUP_TARGET/}" ]]; then
+    panic "BACKUP_TARGET have to be defined"
 fi
 
-case "${PGSQL_BACKUP_TYPE}" in
+case "${BACKUP_TYPE}" in
 git)
     mysql_backup_dir="$( mktemp -d /tmp/pgsql.XXX )"
     trap "rm -Rf ${mysql_backup_dir}" 0 1
 
-    git clone "${PGSQL_BACKUP_TARGET}" "${mysql_backup_dir}" -q || \
-        panic "Can't clone initial git dir ${PGSQL_BACKUP_TARGET}"
+    git clone "${BACKUP_TARGET}" "${mysql_backup_dir}" -q || \
+        panic "Can't clone initial git dir ${BACKUP_TARGET}"
     ;;
 hg|mercurial)
     mysql_backup_dir="$( mktemp -d /tmp/mysql.XXX )"
     trap "rm -Rf ${mysql_backup_dir}" 0 1
 
-    hg clone "${PGSQL_BACKUP_TARGET}" "${mysql_backup_dir}" -q || \
-        panic "Can't clone initial hg dir ${PGSQL_BACKUP_TARGET}"
+    hg clone "${BACKUP_TARGET}" "${mysql_backup_dir}" -q || \
+        panic "Can't clone initial hg dir ${BACKUP_TARGET}"
     ;;
 "")
-    mysql_backup_dir="${PGSQL_BACKUP_TARGET}"
+    mysql_backup_dir="${BACKUP_TARGET}"
     ;;
 *)
-    print_error "$SCRIPT_NAME invalid PGSQL_BACKUP_TARGET have to be in [git|mercurial|\"\"]"
+    print_error "$SCRIPT_NAME invalid BACKUP_TARGET have to be in [git|mercurial|\"\"]"
     exit 1
 esac
 
 
 pgsql_env=
 pgdump_suffix=
-if [[ ! -z "${PGSQL_PASSWORD}" ]] ; then
-    pgsql_env="${pgsql_env} MYSQL_PWD=\"${PGSQL_PASSWORD}\""
+if [[ ! -z "${POSTGRES_PASSWORD}" ]] ; then
+    pgsql_env="${pgsql_env} PGPASSWORD=\"${POSTGRES_PASSWORD}\""
 fi
 
-if [[ ! -z "${PGSQL_USER}" ]] ; then
-    pgdump_suffix="${pgdump_suffix} --user=${PGSQL_USER}"
+if [[ ! -z "${POSTGRES_USER}" ]] ; then
+    pgdump_suffix="${pgdump_suffix} -U ${POSTGRES_USER}"
 fi
 
-if [[ ! -z "${PGSQL_HOST}" ]] ; then
-    pgdump_suffix="${pgdump_suffix} --host=${PGSQL_HOST}"
+if [[ ! -z "${POSTGRES_HOST}" ]] ; then
+    pgdump_suffix="${pgdump_suffix} -h ${POSTGRES_HOST}"
 fi
 
-if [[ ! -z "${PGSQL_PORT}" ]] ; then
-    pgdump_suffix="${pgdump_suffix} --port=${PGSQL_PORT}"
+if [[ ! -z "${POSTGRES_PORT}" ]] ; then
+    pgdump_suffix="${pgdump_suffix} -p ${POSTGRES_PORT}"
 fi
 
 pg_split="${BASE_PATH}/pgdump_splitsort.py"
 
 sql_dump_file="$( mktemp /tmp/dump.XXXX )"
-eval ${pgsql_env} pg_dump ${pgdump_suffix} ${PGSQL_DATABASE} \
-    -c --skip-opt --skip-dump-date --create-options  > "${sql_dump_file}" || \
-    panic "Error dumpring databse ${PGSQL_USER}@${PGSQL_HOST}:${PGSQL_PORT}/${PGSQL_DATABASE}"
+eval ${pgsql_env} pg_dump ${pgdump_suffix} ${POSTGRES_DB} > "${sql_dump_file}" || \
+    panic "Error dumpring databse ${POSTGRES_USER}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}"
 
 "${pg_split}" "${sql_dump_file}" -d "${mysql_backup_dir}" -c || \
     panic "Error splitting databse dump "
 rm -f "${sql_dump_file}"
 
-case "${PGSQL_BACKUP_TYPE}" in
+case "${BACKUP_TYPE}" in
 git)
     (
         cd ${mysql_backup_dir}  \
@@ -94,7 +91,7 @@ git)
                 git push -q 2> /dev/null \
                 || git push -q
             }
-    ) || panic "Can't commit and push changes to ${PGSQL_BACKUP_TARGET}"
+    ) || panic "Can't commit and push changes to ${BACKUP_TARGET}"
     ;;
 hg|mercurial)
     (
@@ -105,6 +102,6 @@ hg|mercurial)
                 hg push -q &> /dev/null || if [[ $? -gt 1 ]]; then false; fi \
                 || hg push -q > /dev/null || if [[ $? -gt 1 ]]; then false; fi
             }
-    ) || panic "Can't commit and push changes to ${PGSQL_BACKUP_TARGET}"
+    ) || panic "Can't commit and push changes to ${BACKUP_TARGET}"
     ;;
 esac
