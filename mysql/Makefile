@@ -20,7 +20,7 @@ build5.5:
 		--file mysql.5.5.docker \
 		.
 
-push: build5.5
+push5.5: build5.5
 	docker push $(REPO)/$(NAME):5.5
 
 build8:
