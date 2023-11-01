@@ -17,7 +17,7 @@ build5.5:
 		--build-arg http_proxy=$(http_proxy) \
 		--build-arg https_proxy=$(http_proxy) \
 		--build-arg no_proxy=$(no_proxy) \
-		--file mysql.5.5.docker \
+		--file mysql.5.5.dockerfile \
 		.
 
 push5.5: build5.5
@@ -28,7 +28,7 @@ build8:
 		--build-arg http_proxy=$(http_proxy) \
 		--build-arg https_proxy=$(http_proxy) \
 		--build-arg no_proxy=$(no_proxy) \
-		--file mysql.8.docker \
+		--file mysql.8.dockerfile \
 		.
 
 push8: build8
