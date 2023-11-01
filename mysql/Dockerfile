@@ -1,12 +1,9 @@
 FROM mysql:5.7
 
 RUN \
-    apt-get update && \
-    apt-get upgrade -y && \
-    apt-get install -y python2.7 htop && \
-    apt-get autoremove -y && \
-    apt-get autoclean -y && \
-    rm -rf /tmp/* /var/lib/apt/lists/* && \
+    set -ex; \
+    yum install -y python2 htop ;\
+    rm -rf /var/cache/yum ; \
     true
 
 ADD sqldump/ /sqldump/
